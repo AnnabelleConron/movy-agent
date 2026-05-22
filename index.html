@@ -241,26 +241,58 @@
       40%            { transform: scale(1.2); opacity: 1; }
     }
 
-    /* Report / snapshot card */
-    .report-card {
-      max-width: 560px;
+    /* Report modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 26, 46, 0.45);
+      z-index: 100;
+      align-items: flex-end;
+      padding: 0 100px 100px;
+    }
+    .modal-overlay.visible { display: flex; }
+    .modal-card {
       background: var(--white);
-      border-left: 3px solid var(--mojo);
-      border-radius: 0 12px 12px 0;
-      padding: 16px 20px;
-      box-shadow: 0 2px 12px rgba(20,26,46,0.08);
+      border-radius: 40px;
+      padding: 40px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
-    .report-label {
-      font-size: 10px;
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 18px;
       font-weight: 500;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--mojo);
-      margin-bottom: 10px;
+      color: #141A2E;
+      line-height: 23.4px;
     }
-    .report-body {
+    .modal-close {
+      width: 24px;
+      height: 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      flex-shrink: 0;
+      opacity: 0.7;
+      transition: opacity 0.15s;
+    }
+    .modal-close:hover { opacity: 1; }
+    .modal-body {
+      font-family: 'DM Sans', sans-serif;
       font-size: 14px;
-      line-height: 1.7;
+      font-weight: 400;
+      line-height: 22.4px;
       color: #141A2E;
       white-space: pre-wrap;
       word-break: break-word;
@@ -373,6 +405,22 @@
     </div>
     <div class="message-area" id="message-area"></div>
     <div class="error-msg" id="error-msg">Something went wrong. Check your API key and try again.</div>
+
+    <!-- Report modal -->
+    <div id="report-modal" class="modal-overlay" onclick="closeModal()">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <span class="modal-title" id="modal-title"></span>
+          <button class="modal-close" onclick="closeModal()" aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 1L13 13M13 1L1 13" stroke="#141A2E" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+      </div>
+    </div>
+
     <div class="input-area">
       <input
         type="text"
@@ -561,6 +609,7 @@ GUARDRAILS: You are not a medical professional. If ${n} asks if pain is serious:
       currentMode = mode;
       conversationHistory = [];
       document.getElementById('message-area').innerHTML = '';
+      closeModal();
       hideError();
       updateNav();
       showScreen('screen-chat');
@@ -575,6 +624,7 @@ GUARDRAILS: You are not a medical professional. If ${n} asks if pain is serious:
       currentMode = mode;
       conversationHistory = [];
       document.getElementById('message-area').innerHTML = '';
+      closeModal();
       hideError();
       updateNav();
       triggerBegin();
@@ -656,7 +706,9 @@ GUARDRAILS: You are not a medical professional. If ${n} asks if pain is serious:
       const hasReport = isOnboarding
         ? /\*\*Patient Snapshot/.test(text)
         : /\*\*Check-in Report/.test(text);
-      const reportLabel = isOnboarding ? 'PATIENT SNAPSHOT' : 'CHECK-IN REPORT';
+      const modalTitle = isOnboarding
+        ? 'Patient Snapshot for Physiotherapist'
+        : 'Check-in Report for Physiotherapist';
 
       if (hasReport) {
         const parts = text.split(/\n---\n/);
@@ -665,7 +717,7 @@ GUARDRAILS: You are not a medical professional. If ${n} asks if pain is serious:
           const content = parts[1].trim();
           const after = parts.slice(2).join('\n---\n').trim();
           if (before) appendBubble('movy', before);
-          appendReportCard(reportLabel, content);
+          showModal(modalTitle, content);
           if (after) appendBubble('movy', after);
           return;
         }
@@ -685,23 +737,14 @@ GUARDRAILS: You are not a medical professional. If ${n} asks if pain is serious:
       scrollBottom();
     }
 
-    function appendReportCard(label, content) {
-      const area = document.getElementById('message-area');
-      const row = document.createElement('div');
-      row.className = 'msg-row movy';
-      const card = document.createElement('div');
-      card.className = 'report-card';
-      const lbl = document.createElement('div');
-      lbl.className = 'report-label';
-      lbl.textContent = label;
-      const body = document.createElement('div');
-      body.className = 'report-body';
-      body.textContent = content;
-      card.appendChild(lbl);
-      card.appendChild(body);
-      row.appendChild(card);
-      area.appendChild(row);
-      scrollBottom();
+    function showModal(title, content) {
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-body').textContent = content;
+      document.getElementById('report-modal').classList.add('visible');
+    }
+
+    function closeModal() {
+      document.getElementById('report-modal').classList.remove('visible');
     }
 
     function appendTyping() {
