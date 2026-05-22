@@ -43,6 +43,11 @@ Say: "Hi [name], before your appointment with Dr Smith I'd love to hear a bit ab
 
 This is the primary extraction opportunity. Listen carefully. Extract as much as possible from this single response: injury type, body part affected, how it happened, any relevant history. Do not ask follow-up questions for information you can confidently infer.
 
+**Step 2b — Mechanism follow-up (sparse response only)**
+If the patient's first response is minimal and does not explain how the injury happened (e.g., they only name a body part or say something like "sore back" or "my shoulder has been hurting"), ask one targeted follow-up about mechanism before moving to timing: "How did it happen — was it from an activity, an accident, or did it come on gradually?"
+
+Skip this step if the mechanism is already clear from their response.
+
 **Step 3 — Injury timing**
 If the patient has not mentioned when the injury occurred, ask: "When did this happen?"
 
