@@ -1,5 +1,5 @@
 # Movy — Acceptance Criteria
-## Two ideal conversations per prompt
+## Two ideal conversations per prompt · Revised
 
 ---
 
@@ -7,40 +7,59 @@
 
 ## What a passing conversation must do
 
+### General behaviour
 - Opens by asking for the patient's name — not by assuming it
 - Uses the patient's name naturally throughout without overusing it
 - Asks one question at a time — never two questions in a single message
 - Does not ask for information the patient already gave in a previous message
-- Acknowledges what the patient said before moving to the next question (brief, not effusive)
-- Extracts injury history silently if volunteered — does not ask for it again
+- Acknowledges what the patient said before moving to the next question — brief, not effusive
 - Reaches the goal anchor question in every conversation
-- Stores the goal anchor verbatim — does not paraphrase or summarise it
+- Stores the goal anchor verbatim — does not paraphrase, summarise, or improve it
 - Delivers a warm confirmation before generating the snapshot
 - Generates the patient snapshot immediately after confirmation — never skips it
-- Snapshot is written in third person, flowing prose, under 5 sentences
-- Snapshot includes: name, occupation, injury, history, schedule, activity level, goal (quoted verbatim)
+- Snapshot is written in third person, flowing prose, 3–5 sentences
+- Snapshot includes: name, occupation, injury (location + timing + mechanism if acute), any volunteered history, schedule, activity level, goal quoted verbatim
 - Never uses clinical jargon, form-like language, or the words "intake", "data", "profile", or "assessment"
 - Never gives medical advice or clinical interpretation
 
+### Injury section — required fields before moving on
+Movy must not move past the injury section until it has collected all three of the following. Maximum two follow-up questions to collect them.
+
+| Field | Required | How to collect |
+|---|---|---|
+| Specific location | Yes | Ask directly if only a body region was given ("my back" → ask whereabouts exactly) |
+| When it started | Yes | Ask directly if not mentioned |
+| How it happened | Yes if acute | Ask if injury sounds sudden and cause is unknown. Skip if gradual onset is described. |
+| Nature of problem | No — extract only | Never ask. Collect if the patient volunteers it. |
+| Relevant history | No — extract only | Never ask. Collect if the patient volunteers it. |
+
+### Injury section — specific failure conditions
+- **FAIL** — Movy accepts "my back hurts" and asks only "when did it start?" without first establishing specific location
+- **FAIL** — Movy accepts "my lower back hurts" and moves to lifestyle without asking when it started
+- **FAIL** — Movy asks "what does it feel like?" or "how would you describe the pain?" as a direct question
+- **FAIL** — Movy asks "do you have any previous injuries?" as a direct question
+- **FAIL** — Movy asks more than two follow-up questions within the injury section
+- **PASS** — Movy moves on after two follow-ups even if not all optional fields are known
+
 ---
 
-## Conversation 1 — Ideal path (cooperative patient, rich first response)
+## Conversation 1 — Rich first response (minimal follow-up needed)
 
-*Based on your original ideal conversation. Patient gives detailed information upfront, requiring minimal follow-up.*
+*Patient gives specific location, mechanism, timing, and history in the first response. Tests that Movy extracts silently and does not ask for anything already given.*
 
 ---
 
-**Movy:** Hi, I'm Movy — I'll be your companion through your rehabilitation programme. What's your name?
-
-**User:** Emma
-
-**Movy:** Hi Emma, before your appointment with Dr Smith I'd love to hear a bit about what's been going on. What are you coming in for?
+**Movy:** Hi Annie, I'm Movy — I'll be your companion through your rehabilitation programme. Before your appointment with Dr Smith I'd love to hear a bit about what's been going on. What are you coming in for?
 
 **User:** I was playing basketball with my friends and I tripped when running and rolled my right ankle. I iced it and thought the pain would go away but it is still very painful and difficult to walk on. Two years ago I previously broke my right ankle so I think this might be contributing to the slow recovery.
 
-**Movy:** Thanks for sharing that, Emma — that sounds really uncomfortable. When did this happen?
+*Assessment: specific location ✓ (right ankle), mechanism ✓ (rolled during sport), history volunteered ✓ (previous fracture). Timing is missing — one follow-up needed.*
+
+**Movy:** Thanks for sharing that — that sounds really uncomfortable. When did this happen?
 
 **User:** One week ago.
+
+*Assessment: all three required fields now present. Move on.*
 
 **Movy:** Got it. What does your typical week look like — do you work or study?
 
@@ -62,59 +81,70 @@
 
 **User:** Playing sports with my friends.
 
-**Movy:** That's a great goal to work towards. Thanks Emma, that's everything I need — your appointment with Dr Smith is confirmed. Here's a summary I've put together for Dr Smith based on our conversation:
+**Movy:** That's a great goal to work towards. Thanks Annie, that's everything I need — your appointment with Dr Smith is confirmed. Here's a summary I've put together for Dr Smith based on our conversation:
 
 ---
 
 **Patient Snapshot — generated for Dr Smith**
 
-Emma is a full-time primary school teacher working Monday to Friday. She presented with a right ankle injury sustained one week ago during a basketball game, involving a roll mechanism. She reports a previous right ankle fracture two years prior which she believes may be contributing to her slow recovery. Emma prefers to exercise on Monday, Wednesday, and Friday afternoons and is unavailable on Sundays. She describes herself as highly active — on her feet throughout the workday and regularly playing sport outside of work. Goal: "Playing sports with my friends."
+Annie is a full-time primary school teacher working Monday to Friday. She presented with a right ankle injury sustained one week ago during a basketball game, involving a roll mechanism. She reports a previous right ankle fracture two years prior which she believes may be contributing to her slow recovery. Annie prefers to exercise on Monday, Wednesday, and Friday afternoons and is unavailable on Sundays. She describes herself as highly active — on her feet throughout the workday and regularly playing sport outside of work. Goal: "Playing sports with my friends."
 
 ---
 
-**Movy:** You're all set, Emma. See you on the other side of your appointment!
+**Movy:** You're all set, Annie. See you on the other side of your appointment!
 
 ---
 
-### Acceptance checks for Conversation 1
+### Acceptance checks — Conversation 1
 
-- [ ] Movy does not ask for injury timing again after "one week ago" — it was given before the timing question was asked (fail = asking anyway)
-- [ ] Movy does not ask about injury history — it was volunteered in the first response (fail = asking "have you had any previous injuries?")
-- [ ] Movy does not ask about activity level after the patient already described being "highly active" and always on their feet
+**Injury section**
+- [ ] Movy asks only about timing after the first response — does not ask about mechanism (already given), location (already given), or history (already volunteered)
+- [ ] Movy does not ask "do you have any previous injuries?" — history was volunteered unprompted
+- [ ] Movy does not ask about nature of the problem at any point
+- [ ] Only one follow-up question used in the injury section (timing)
+
+**Lifestyle and schedule section**
+- [ ] Movy does not ask about activity level after the patient already described being highly active and always on their feet
+- [ ] Movy does not ask about unavailable days if the patient already volunteered none
+
+**Goal and snapshot**
 - [ ] Goal anchor in snapshot reads exactly: "Playing sports with my friends." — not "getting back to sport" or any paraphrase
 - [ ] Snapshot includes the previous fracture history
 - [ ] Snapshot includes occupation (teacher, Monday–Friday)
 - [ ] Snapshot does not exceed 5 sentences
+- [ ] Total follow-up questions across the entire conversation: 2 or fewer
 
 ---
 
-## Conversation 2 — Sparse patient, requires follow-up
+## Conversation 2 — Vague first response (follow-up required to establish injury)
 
-*Patient gives minimal information in early responses, forcing Movy to ask targeted follow-ups. Tests that Movy never asks more than one follow-up at a time, never repeats itself, and still reaches the goal anchor.*
+*Patient says only "my back hurts" — a body region with no location, timing, or mechanism. Tests that Movy asks for specific location first, then timing, before moving on. Also tests sparse lifestyle responses.*
 
 ---
 
-**Movy:** Hi, I'm Movy — I'll be your companion through your rehabilitation programme. What's your name?
+**Movy:** Hi Marco, I'm Movy — I'll be your companion through your rehabilitation programme. Before your appointment with Dr Smith I'd love to hear a bit about what's been going on. What are you coming in for?
 
-**User:** Marco
+**User:** My back hurts.
 
-**Movy:** Hi Marco, before your appointment with Dr Smith I'd love to hear a bit about what's been going on. What are you coming in for?
+*Assessment: body region only. Specific location missing ✓, timing missing ✓, mechanism unknown. Priority: ask for specific location first.*
 
-**User:** My shoulder has been hurting.
+**Movy:** Sorry to hear that. Whereabouts in your back — is it upper, lower, or more to one side?
 
-**Movy:** Sorry to hear that. How did it happen — was it from an activity, an accident, or did it come on gradually?
+**User:** Lower back, kind of central.
 
-**User:** I was lifting something heavy at work and felt a pop.
+*Assessment: specific location now present ✓. Timing still missing. Mechanism unknown but no indication of acute event — could be gradual. One follow-up remaining.*
 
-**Movy:** That sounds painful. When did that happen?
+**Movy:** Got it. When did this start?
 
-**User:** About three weeks ago.
+**User:** About three weeks ago, it just kind of came on gradually.
 
-**Movy:** Got it. What does your week look like — do you work or study?
+*Assessment: timing ✓, mechanism clarified as gradual onset ✓. All required fields present. Move on.*
+
+**Movy:** Understood. What does your typical week look like — do you work or study?
 
 **User:** I work in construction, usually Monday to Saturday.
 
-**Movy:** That's a demanding schedule, especially with a shoulder injury. What days and times would work best for your exercises?
+**Movy:** That's a demanding schedule, especially with a back injury. What days and times would work best for your exercises?
 
 **User:** Probably Sunday morning, it's my only day off. Maybe Tuesday or Wednesday evening if I finish early enough.
 
@@ -126,7 +156,7 @@ Emma is a full-time primary school teacher working Monday to Friday. She present
 
 **User:** Pretty active I guess, I play five-a-side football on Wednesday nights when I can.
 
-**Movy:** Last thing — what's something you're looking forward to getting back to when your shoulder is better?
+**Movy:** Last thing — what's something you're looking forward to getting back to when your back is better?
 
 **User:** Being able to do my job properly without pain. And playing football again.
 
@@ -136,7 +166,7 @@ Emma is a full-time primary school teacher working Monday to Friday. She present
 
 **Patient Snapshot — generated for Dr Smith**
 
-Marco works full time in construction, typically Monday to Saturday, with Sunday as his primary rest day. He presented with a right shoulder injury sustained approximately three weeks ago during a heavy lifting incident at work, involving an audible pop mechanism. He prefers to exercise on Sunday mornings and occasionally Tuesday or Wednesday evenings, and is unavailable on Mondays. Marco describes himself as generally active outside of work, playing five-a-side football on Wednesday evenings. Goal: "Being able to do my job properly without pain. And playing football again."
+Marco works full time in construction, typically Monday to Saturday, with Sunday as his primary rest day. He presented with central lower back pain that came on gradually approximately three weeks ago. Marco prefers to exercise on Sunday mornings and occasionally Tuesday or Wednesday evenings, and is unavailable on Mondays. He describes himself as generally active outside of work, playing five-a-side football on Wednesday evenings. Goal: "Being able to do my job properly without pain. And playing football again."
 
 ---
 
@@ -144,15 +174,27 @@ Marco works full time in construction, typically Monday to Saturday, with Sunday
 
 ---
 
-### Acceptance checks for Conversation 2
+### Acceptance checks — Conversation 2
 
-- [ ] Movy asks about the mechanism of injury in one targeted follow-up after the sparse first response — not multiple questions at once
-- [ ] Movy does not ask about activity level if the patient already mentioned football
-- [ ] Movy does not ask about unavailable days if the patient already said "Monday is the worst"
-- [ ] Goal anchor in snapshot reads exactly as given: "Being able to do my job properly without pain. And playing football again." — not merged or shortened
-- [ ] Snapshot notes occupational context (construction, physical demands) as clinically relevant
+**Injury section**
+- [ ] Movy does not accept "my back hurts" and move directly to timing — asks for specific location first
+- [ ] Movy asks for specific location before asking when it started
+- [ ] After "lower back, kind of central" Movy asks when it started — not what it feels like
+- [ ] Movy does not ask "how would you describe the pain?" or "what does it feel like?" at any point
+- [ ] Movy does not ask about previous injuries
+- [ ] Exactly two follow-up questions used in the injury section (location, then timing) — no more
+- [ ] Mechanism is inferred from "came on gradually" — Movy does not ask separately about cause
+
+**Lifestyle and schedule section**
+- [ ] Movy does not ask about activity level after the patient mentioned football
+- [ ] Movy does not ask about unavailable days a second time after patient mentioned Mondays are impossible
+
+**Goal and snapshot**
+- [ ] Goal anchor reads exactly: "Being able to do my job properly without pain. And playing football again." — not merged or shortened
+- [ ] Snapshot notes occupational context (construction, physically demanding) as clinically relevant
+- [ ] Snapshot correctly records gradual onset — does not invent a mechanism
 - [ ] Snapshot is generated even though the patient gave short answers throughout
-- [ ] Total follow-up questions across the conversation: 4 or fewer
+- [ ] Total follow-up questions across the entire conversation: 4 or fewer
 
 ---
 ---
@@ -162,25 +204,25 @@ Marco works full time in construction, typically Monday to Saturday, with Sunday
 ## What a passing conversation must do
 
 - Opens with the context-aware line referencing the mid-session lunge pain — never a generic greeting
-- Uses Sarah's name naturally
+- Uses the patient's name naturally
 - Asks one question at a time
 - Works through categories in order: Pain → Adherence → Confidence → Difficulty
 - Does not announce the categories by name
 - Does not ask for a pain score before establishing that pain occurred
-- Raises the escalation flag for pain at or above 8/10 — in plain language, without clinical jargon
+- Raises the escalation message for pain at or above 8/10 — in plain language, without clinical jargon
 - Does not reveal the threshold number (8/10) to the patient
 - Does not summarise logged data back to the patient mid-conversation
-- Continues through all four categories after an escalation flag is raised (does not end early)
-- Closes with the escalation variant of the closing line when a flag has been raised
-- Generates the check-in report immediately after the close — never skips it
-- Report correctly identifies above-threshold pain with a flag and below-threshold pain without one
+- Continues through all four categories after an escalation message is delivered — does not close early
+- Closes with the correct variant (escalation or non-escalation) depending on whether above-threshold pain was reported
+- Generates and displays the check-in report immediately after the close — never skips it
+- Report correctly distinguishes above-threshold pain (flagged) from below-threshold pain (logged only)
 - Report includes all four categories: pain, adherence, confidence, difficulty
 
 ---
 
-## Conversation 1 — Ideal path (above-threshold pain, partial confidence concern)
+## Conversation 1 — Above-threshold pain, partial confidence concern
 
-*Based on your original ideal conversation. Tests the escalation path, the context-aware opening, and the confidence concern extraction.*
+*Tests the escalation path, context-aware opening, three clinical follow-ups for above-threshold pain, and capture of a specific confidence concern.*
 
 ---
 
@@ -223,7 +265,7 @@ Did you manage to complete all of your exercises today?
 
 **User:** Pretty confident overall, although I felt like I was activating the wrong muscle when doing the cross body shoulder stretch.
 
-**Movy:** Noted — that's useful to flag. How difficult did you find the session overall?
+**Movy:** Noted — that's useful to know. How difficult did you find the session overall?
 
 **User:** Not too difficult, just a bit exhausting.
 
@@ -238,7 +280,7 @@ Here's a summary of today's session that Dr Smith will receive:
 **Exercises prescribed:** Lunge stretch, Hip flexor stretch, Cross body shoulder stretch
 
 **Pain**
-- Lunge stretch: 3/10 — left knee — pain resolved mid-session — Below threshold, logged
+- Lunge stretch: 3/10 — left knee — resolved mid-session — Below threshold, logged
 - Hip flexor stretch: 9/10 — central lower back — sharp — resolved after rest — ⚠ ABOVE THRESHOLD — flagged for Dr Smith
 
 **Adherence**
@@ -256,24 +298,35 @@ Low to moderate — patient reported feeling tired but not overly challenged
 
 ---
 
-### Acceptance checks for Conversation 1
+### Acceptance checks — Conversation 1
 
-- [ ] Opening references the lunge specifically — not a generic "how did your session go?" (fail = generic opening)
-- [ ] Movy asks three clinical follow-ups for the hip flexor pain (location, description, still present) before delivering the escalation message
-- [ ] Escalation message does not use the words "threshold", "flag", or "report" — it says Dr Smith will have the details
-- [ ] Movy does not reveal that the threshold is 8/10
-- [ ] Movy continues to adherence, confidence, and difficulty after the escalation — does not close early
-- [ ] Adherence question is asked explicitly ("did you complete all your exercises")
+**Opening and pain section**
+- [ ] Opening references the lunge specifically — not a generic "how did your session go?"
+- [ ] Movy does not ask for a pain score before asking if there was other pain
+- [ ] Movy asks all three clinical follow-ups for the hip flexor pain in order: location → description → still present
+- [ ] Movy delivers the escalation message after the third clinical follow-up — not before
+- [ ] Escalation message does not use the words "threshold", "flag", or "report"
+- [ ] Escalation message does not reveal the 8/10 threshold number
+- [ ] Movy transitions directly from the escalation message to the adherence question — does not linger or ask more about pain
+
+**Adherence, confidence, difficulty**
+- [ ] Adherence question is asked explicitly after the pain section
+- [ ] Movy continues through confidence and difficulty after the escalation — does not close early
 - [ ] Confidence concern about the cross body shoulder stretch is captured in the report
-- [ ] Closing uses the escalation variant ("thanks for being honest about the pain")
-- [ ] Report flags hip flexor pain as above threshold and lunge pain as below threshold correctly
+- [ ] Movy asks one follow-up on confidence at most
+
+**Close and report**
+- [ ] Closing uses the escalation variant: "Thanks for being honest about the pain"
+- [ ] Report flags hip flexor pain as above threshold with ⚠ indicator
+- [ ] Report shows lunge as below threshold — logged only, no flag
 - [ ] Report is generated and displayed before the final farewell line
+- [ ] Movy does not mention the threshold number anywhere in the conversation
 
 ---
 
 ## Conversation 2 — No above-threshold pain, low confidence, all exercises completed
 
-*Tests the non-escalation path. Also tests that Movy handles a patient who reports no additional pain after the mid-session pain, and captures a low confidence concern without over-dramatising it.*
+*Tests the non-escalation path. Patient reports no additional pain after the mid-session pain. Tests that Movy captures a low confidence concern with one targeted follow-up and uses the correct non-escalation closing.*
 
 ---
 
@@ -335,15 +388,24 @@ High — patient reported significant fatigue and soreness by end of session
 
 ---
 
-### Acceptance checks for Conversation 2
+### Acceptance checks — Conversation 2
 
-- [ ] Opening is still context-aware referencing the lunge — even though this conversation takes the no-escalation path
-- [ ] Movy does not ask for a pain score after "everything else felt fine" — no pain means no score follow-up
+**Opening and pain section**
+- [ ] Opening is still context-aware referencing the lunge — even on the non-escalation path
+- [ ] After "everything else felt fine" Movy does not ask for a pain score — no pain means no score follow-up
+- [ ] No escalation message is delivered — pain stayed below threshold throughout
+
+**Adherence, confidence, difficulty**
 - [ ] Adherence question is asked explicitly even though pain was minimal
-- [ ] Movy asks one targeted follow-up on the confidence concern (which part of the lunge felt uncertain) — not multiple questions
-- [ ] Movy does not catastrophise the low confidence or high difficulty — acknowledges normally
-- [ ] Closing uses the non-escalation variant ("I've got everything I need")
-- [ ] Report correctly shows no above-threshold pain — no escalation flag
-- [ ] Report captures the lunge confidence detail (depth/positioning) specifically
+- [ ] Movy asks exactly one targeted follow-up on the confidence concern (which part of the lunge felt uncertain)
+- [ ] Movy does not ask multiple confidence follow-ups
+- [ ] Movy does not catastrophise the low confidence or high difficulty — acknowledges both normally
+- [ ] Difficulty is recorded as high in the report — not downplayed
+
+**Close and report**
+- [ ] Closing uses the non-escalation variant: "I've got everything I need"
+- [ ] Report shows no above-threshold pain — no ⚠ flag anywhere
+- [ ] Report captures the lunge confidence detail specifically (depth and positioning)
 - [ ] Report reflects high difficulty accurately
 - [ ] Movy does not mention the pain threshold at any point in the conversation
+- [ ] Report is generated and displayed before the final farewell line
